@@ -45,7 +45,6 @@ namespace JJPlugin {
                 if (pos != StringRef::npos) {
                     DiagnosticsEngine &D = ci.getDiagnostics();
                     SourceLocation loc = decl->getLocation().getLocWithOffset(pos);
-                    SourceLocation end = loc.getLocWithOffset(1);
                     StringRef replacement;
                     FixItHint fixItHint = FixItHint::CreateReplacement(SourceRange(loc), replacement);
                     int diagID = D.getCustomDiagID(DiagnosticsEngine::Error, "老子警告你：类名中不能带有下划线");
@@ -55,7 +54,7 @@ namespace JJPlugin {
             }
         }
     };
-    
+        
     class JJASTConsumer: public ASTConsumer {
     private:
         MatchFinder matcher;
