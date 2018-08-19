@@ -191,3 +191,5 @@ namespace demonstrates {
 static FrontendPluginRegistry::Add<JJPlugin::JJASTAction>
 X("JJPlugin", "The JJPlugin is my first clang-plugin.");
 
+static FrontendPluginRegistry::Add<demonstrates::PrintFunctionNamesAction>
+Y("demonstrates","add demonstrates");
