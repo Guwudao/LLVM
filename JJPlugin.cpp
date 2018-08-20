@@ -49,8 +49,15 @@ namespace JJPlugin {
                 if (pos != StringRef::npos) {
                     DiagnosticsEngine &D = ci.getDiagnostics();
                     SourceLocation loc = decl->getLocation().getLocWithOffset(pos);
-                    StringRef replacement;
-                    FixItHint fixItHint = FixItHint::CreateReplacement(SourceRange(loc), replacement);
+                    
+                    std::string tempName = className;
+                    std::string::iterator end_pos = std::remove(tempName.begin(), tempName.end(), '_');
+                    tempName.erase(end_pos, tempName.end());
+                    StringRef replacement(tempName);
+                    SourceLocation nameStart = decl->getLocation();
+                    SourceLocation nameEnd = nameStart.getLocWithOffset(className.size() - 1);
+                    FixItHint fixItHint = FixItHint::CreateReplacement(SourceRange(nameStart, nameEnd), replacement);
+                    
                     int diagID = D.getCustomDiagID(DiagnosticsEngine::Error, "老子警告你：类名中不能带有下划线");
                     D.Report(loc, diagID).AddFixItHint(fixItHint);
                 }
@@ -90,6 +97,7 @@ namespace JJPlugin {
 //Example clang plugin which simply prints the names of all the top-level decls
 // in the input file.
 namespace demonstrates {
+    
     class PrintFunctionsConsumer : public ASTConsumer {
         CompilerInstance &Instance;
         std::set<std::string> ParsedTemplates;
@@ -179,6 +187,7 @@ namespace demonstrates {
             
             return true;
         }
+        
         void PrintHelp(llvm::raw_ostream& ros) {
             ros << "Help for PrintFunctionNames plugin goes here\n";
         }
