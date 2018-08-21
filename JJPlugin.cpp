@@ -25,7 +25,113 @@ namespace JJPlugin {
     public:
         JJHandler(CompilerInstance &ci) :ci(ci) {}
         
+        bool JJVisitObjCMethodDecl(const ObjCMethodDecl *declaration)
+        {
+            cout << "JJVisitObjCMethodDecl -- JJVisitObjCMethodDecl -- JJVisitObjCMethodDecl " << endl;
+            if (isUserSourceCode(declaration))
+            {
+                cout << "isUserSourceCode -- true" << endl;
+//                checkMethodNameForUppercaseName(declaration);
+//                checkMethodParamsNameForUppercaseName(declaration);
+//                checkMethodBodyForOver500Lines(declaration);
+            }
+            
+            return true;
+        }
+        
+        //判断是否为用户源码
+        //@return true 为用户源码，false 非用户源码
+        bool isUserSourceCode (const Decl *decl)
+        {
+//            cout << "isUserSourceCode -- isUserSourceCode" << endl;
+//            string filename = ci.getSourceManager().getFilename(decl->getSourceRange().getBegin()).str();
+//            cout << "filename: -- " + filename << endl;
+//            if (filename.empty())
+//                cout << "filename.empty() -- filename.empty()" << endl;
+//                return false;
+//
+//            //非XCode中的源码都认为是用户源码
+//            if(filename.find("/Applications/Xcode.app/") == 0)
+//                cout << "filename.find(\"/Applications/Xcode.app/\")" << endl;
+//                return false;
+
+            cout << "isUserSourceCode true -- true --true" << endl;
+            return true;
+        }
+        
+        
+        //检测方法名是否存在大写开头
+        void checkMethodNameForUppercaseName(const ObjCMethodDecl *decl)
+        {
+            cout << "检测方法名是否存在大写开头 -- 检测方法名是否存在大写开头 -- 检测方法名是否存在大写开头 " << endl;
+            //检查名称的每部分，都不允许以大写字母开头
+            Selector sel = decl -> getSelector();
+            int selectorPartCount = decl -> getNumSelectorLocs();
+            for (int i = 0; i < selectorPartCount; i++)
+            {
+                StringRef selName = sel.getNameForSlot(i);
+                char c = selName[0];
+                if (isUppercase(c))
+                {
+                    //fixItHint
+                    std::string tempName = selName;
+                    tempName[0] = toLowercase(c);
+                    StringRef replacement(tempName);
+                    SourceLocation nameStart = decl -> getSelectorLoc(i);
+                    SourceLocation nameEnd = nameStart.getLocWithOffset(selName.size() - 1);
+                    FixItHint fixItHint = FixItHint::CreateReplacement(SourceRange(nameStart, nameEnd), replacement);
+                    
+                    //Warning
+                    DiagnosticsEngine &D = ci.getDiagnostics();
+                    int diagID = D.getCustomDiagID(DiagnosticsEngine::Warning, "Selector name should not start with uppercase letter");
+                    SourceLocation location = decl->getLocation();
+                    D.Report(location, diagID).AddFixItHint(fixItHint);
+                }
+            }
+        }
+        
+        
         void run(const MatchFinder::MatchResult &Result) {
+            
+                if (const ObjCMethodDecl *Mdecl = Result.Nodes.getNodeAs<ObjCMethodDecl>("ObjCMethodDecl")) {
+//
+//
+//                    JJVisitObjCMethodDecl(Mdecl);
+//
+                    if (JJVisitObjCMethodDecl(Mdecl)) {
+                        cout << "const ObjCMethodDecl *Mdecl" << endl;
+                    }
+//
+//                    //检查名称的每部分，都不允许以大写字母开头
+                    Selector sel = Mdecl -> getSelector();
+                    int selectorPartCount = Mdecl -> getNumSelectorLocs();
+                    for (int i = 0; i < selectorPartCount; i++)
+                    {
+                        StringRef selName = sel.getNameForSlot(i);
+                        std::string tempName = selName;
+//                        cout << tempName << endl;
+                        char c = tempName[0];
+                        if (isUppercase(c))
+                        {
+                            //fixItHint
+                            tempName[0] = toLowercase(c);
+                            StringRef replacement(tempName);
+                            SourceLocation nameStart = Mdecl -> getSelectorLoc(i);
+                            SourceLocation nameEnd = nameStart.getLocWithOffset(selName.size() - 1);
+                            FixItHint fixItHint = FixItHint::CreateReplacement(SourceRange(nameStart, nameEnd), replacement);
+
+                            //Error
+                            DiagnosticsEngine &D = ci.getDiagnostics();
+                            int diagID = D.getCustomDiagID(DiagnosticsEngine::Warning, "方法名应该以小写字母开头");
+                            SourceLocation location = Mdecl->getLocation();
+                            D.Report(location, diagID).AddFixItHint(fixItHint);
+                        }
+                    }
+                }
+            
+            
+            
+            
             if (const ObjCInterfaceDecl *decl = Result.Nodes.getNodeAs<ObjCInterfaceDecl>("ObjCInterfaceDecl")) {
                 
                 StringRef className = decl->getName();
@@ -33,6 +139,7 @@ namespace JJPlugin {
                 char c = className[0];
                 if (isLowercase(c)) {
                     std::string tempName = className;
+                    cout << tempName << endl;
                     tempName[0] = toUppercase(c);
                     StringRef replacement(tempName);
                     SourceLocation nameStart = decl->getLocation();
@@ -72,10 +179,13 @@ namespace JJPlugin {
         JJHandler handler;
         
     public:
+        //调用CreateASTConsumer方法后就会加载Consumer里面的方法
         JJASTConsumer(CompilerInstance &ci) :handler(ci) {
             matcher.addMatcher(objcInterfaceDecl().bind("ObjCInterfaceDecl"), &handler);
+            matcher.addMatcher(objcMethodDecl().bind("ObjCMethodDecl"), &handler);
         }
         
+        //遍历完一次语法树就会调用一次下面方法
         void HandleTranslationUnit(ASTContext &context) {
             matcher.matchAST(context);
         }
