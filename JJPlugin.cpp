@@ -21,20 +21,37 @@ namespace JJPlugin {
     class JJHandler : public MatchFinder::MatchCallback {
     private:
         CompilerInstance &ci;
+        ASTContext *context;
         
     public:
         JJHandler(CompilerInstance &ci) :ci(ci) {}
         
+    private:
         bool JJVisitObjCMethodDecl(const ObjCMethodDecl *declaration)
         {
             cout << "JJVisitObjCMethodDecl -- JJVisitObjCMethodDecl -- JJVisitObjCMethodDecl " << endl;
             if (isUserSourceCode(declaration))
             {
+                checkMethodNameForUppercaseName(declaration);
                 cout << "isUserSourceCode -- true" << endl;
-//                checkMethodNameForUppercaseName(declaration);
 //                checkMethodParamsNameForUppercaseName(declaration);
 //                checkMethodBodyForOver500Lines(declaration);
             }
+            
+            return true;
+        }
+        
+        bool VisitStmt(Stmt *s)
+        {
+            string filename = context->getSourceManager().getFilename(s->getSourceRange().getBegin()).str();
+            
+            if (filename.empty())
+                cout << "filename.empty() -- filename.empty()" << endl;
+            return false;
+            
+            if(filename.find("/Applications/Xcode.app/") == 0)
+                cout << "filename.find(\"/Applications/Xcode.app/\")" << endl;
+            return false;
             
             return true;
         }
@@ -44,14 +61,17 @@ namespace JJPlugin {
         bool isUserSourceCode (const Decl *decl)
         {
 //            cout << "isUserSourceCode -- isUserSourceCode" << endl;
-//            string filename = ci.getSourceManager().getFilename(decl->getSourceRange().getBegin()).str();
+//            string filename = context->getSourceManager().getFilename(decl->getSourceRange().getBegin()).str();
+            
+//            StringRef name = ci.getSourceManager().getFilename(decl->getSourceRange().getBegin());
+            
 //            cout << "filename: -- " + filename << endl;
-//            if (filename.empty())
+//            if (name.empty())
 //                cout << "filename.empty() -- filename.empty()" << endl;
 //                return false;
-//
-//            //非XCode中的源码都认为是用户源码
-//            if(filename.find("/Applications/Xcode.app/") == 0)
+////
+            //非XCode中的源码都认为是用户源码
+//            if(name.find("/Applications/Xcode.app/") == 0)
 //                cout << "filename.find(\"/Applications/Xcode.app/\")" << endl;
 //                return false;
 
@@ -70,11 +90,12 @@ namespace JJPlugin {
             for (int i = 0; i < selectorPartCount; i++)
             {
                 StringRef selName = sel.getNameForSlot(i);
-                char c = selName[0];
+                std::string tempName = selName;
+                char c = tempName[0];
                 if (isUppercase(c))
                 {
                     //fixItHint
-                    std::string tempName = selName;
+//                    std::string tempName = selName;
                     tempName[0] = toLowercase(c);
                     StringRef replacement(tempName);
                     SourceLocation nameStart = decl -> getSelectorLoc(i);
@@ -94,43 +115,10 @@ namespace JJPlugin {
         void run(const MatchFinder::MatchResult &Result) {
             
                 if (const ObjCMethodDecl *Mdecl = Result.Nodes.getNodeAs<ObjCMethodDecl>("ObjCMethodDecl")) {
-//
-//
-//                    JJVisitObjCMethodDecl(Mdecl);
-//
-                    if (JJVisitObjCMethodDecl(Mdecl)) {
-                        cout << "const ObjCMethodDecl *Mdecl" << endl;
-                    }
-//
-//                    //检查名称的每部分，都不允许以大写字母开头
-                    Selector sel = Mdecl -> getSelector();
-                    int selectorPartCount = Mdecl -> getNumSelectorLocs();
-                    for (int i = 0; i < selectorPartCount; i++)
-                    {
-                        StringRef selName = sel.getNameForSlot(i);
-                        std::string tempName = selName;
-//                        cout << tempName << endl;
-                        char c = tempName[0];
-                        if (isUppercase(c))
-                        {
-                            //fixItHint
-                            tempName[0] = toLowercase(c);
-                            StringRef replacement(tempName);
-                            SourceLocation nameStart = Mdecl -> getSelectorLoc(i);
-                            SourceLocation nameEnd = nameStart.getLocWithOffset(selName.size() - 1);
-                            FixItHint fixItHint = FixItHint::CreateReplacement(SourceRange(nameStart, nameEnd), replacement);
 
-                            //Error
-                            DiagnosticsEngine &D = ci.getDiagnostics();
-                            int diagID = D.getCustomDiagID(DiagnosticsEngine::Warning, "方法名应该以小写字母开头");
-                            SourceLocation location = Mdecl->getLocation();
-                            D.Report(location, diagID).AddFixItHint(fixItHint);
-                        }
-                    }
+                    JJVisitObjCMethodDecl(Mdecl);
+
                 }
-            
-            
-            
             
             if (const ObjCInterfaceDecl *decl = Result.Nodes.getNodeAs<ObjCInterfaceDecl>("ObjCInterfaceDecl")) {
                 
