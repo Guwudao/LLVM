@@ -18,6 +18,7 @@ using namespace llvm;
 using namespace clang::ast_matchers;
 
 namespace JJPlugin {
+    
     class JJHandler : public MatchFinder::MatchCallback {
     private:
         CompilerInstance &ci;
@@ -63,6 +64,7 @@ namespace JJPlugin {
 //            cout << "isUserSourceCode -- isUserSourceCode" << endl;
 //            string filename = context->getSourceManager().getFilename(decl->getSourceRange().getBegin()).str();
             
+//            string filename = ci.getSourceManager().getFilename(decl->getSourceRange().getBegin()).str();
 //            StringRef name = ci.getSourceManager().getFilename(decl->getSourceRange().getBegin());
             
 //            cout << "filename: -- " + filename << endl;
@@ -104,7 +106,7 @@ namespace JJPlugin {
                     
                     //Warning
                     DiagnosticsEngine &D = ci.getDiagnostics();
-                    int diagID = D.getCustomDiagID(DiagnosticsEngine::Warning, "Selector name should not start with uppercase letter");
+                    int diagID = D.getCustomDiagID(DiagnosticsEngine::Warning, "方法名建议用小写字母开头");
                     SourceLocation location = decl->getLocation();
                     D.Report(location, diagID).AddFixItHint(fixItHint);
                 }
@@ -176,6 +178,7 @@ namespace JJPlugin {
         //遍历完一次语法树就会调用一次下面方法
         void HandleTranslationUnit(ASTContext &context) {
             matcher.matchAST(context);
+            
         }
     };
     
@@ -191,112 +194,36 @@ namespace JJPlugin {
     };
 }
 
-// MARK: ---
-//Example clang plugin which simply prints the names of all the top-level decls
-// in the input file.
-namespace demonstrates {
+namespace CodingStyle {
     
-    class PrintFunctionsConsumer : public ASTConsumer {
-        CompilerInstance &Instance;
-        std::set<std::string> ParsedTemplates;
-        
+    class CodingStyleASTVisitor : public RecursiveASTVisitor<CodingStyleASTVisitor>
+    {
+    private:
+        ASTContext *context;
+        string objcClsImpl;
+        bool objcIsInstanceMethod;
+        string objcSelector;
+        string objcMethodSrcCode;
+    };
+    
+    class CodingStyleASTConsumer : public ASTConsumer
+    {
+    private:
+        CodingStyleASTVisitor visitor;
+        void HandleTranslationUnit(ASTContext &context);
+    };
+    
+    class CodingStyleASTAction : public PluginASTAction
+    {
     public:
-        PrintFunctionsConsumer(CompilerInstance &Instance,
-                               std::set<std::string> ParsedTemplates)
-        : Instance(Instance), ParsedTemplates(ParsedTemplates) {}
-        
-        bool HandleTopLevelDecl(DeclGroupRef DG) override {
-            for (DeclGroupRef::iterator i = DG.begin(), e = DG.end(); i != e; ++i) {
-                const Decl *D = *i;
-                if (const NamedDecl *ND = dyn_cast<NamedDecl>(D))
-                    llvm::errs() << "top-level-decl: \"" << ND->getNameAsString() << "\"\n";
-            }
-            
-            return true;
-        }
-        
-        void HandleTranslationUnit(ASTContext& context) override {
-            if (!Instance.getLangOpts().DelayedTemplateParsing)
-                return;
-            
-            // This demonstrates how to force instantiation of some templates in
-            // -fdelayed-template-parsing mode. (Note: Doing this unconditionally for
-            // all templates is similar to not using -fdelayed-template-parsig in the
-            // first place.)
-            // The advantage of doing this in HandleTranslationUnit() is that all
-            // codegen (when using -add-plugin) is completely finished and this can't
-            // affect the compiler output.
-            struct Visitor : public RecursiveASTVisitor<Visitor> {
-                const std::set<std::string> &ParsedTemplates;
-                Visitor(const std::set<std::string> &ParsedTemplates)
-                : ParsedTemplates(ParsedTemplates) {}
-                bool VisitFunctionDecl(FunctionDecl *FD) {
-                    if (FD->isLateTemplateParsed() &&
-                        ParsedTemplates.count(FD->getNameAsString()))
-                        LateParsedDecls.insert(FD);
-                    return true;
-                }
-                
-                std::set<FunctionDecl*> LateParsedDecls;
-            } v(ParsedTemplates);
-            v.TraverseDecl(context.getTranslationUnitDecl());
-            clang::Sema &sema = Instance.getSema();
-            for (const FunctionDecl *FD : v.LateParsedDecls) {
-                clang::LateParsedTemplate &LPT =
-                *sema.LateParsedTemplateMap.find(FD)->second;
-                sema.LateTemplateParser(sema.OpaqueParser, LPT);
-                llvm::errs() << "late-parsed-decl: \"" << FD->getNameAsString() << "\"\n";
-            }
-        }
+        unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &Compiler,llvm::StringRef InFile);
+        bool ParseArgs(const CompilerInstance &CI, const std::vector<std::string>& args);
     };
-    
-    class PrintFunctionNamesAction : public PluginASTAction {
-        std::set<std::string> ParsedTemplates;
-    protected:
-        std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
-                                                       llvm::StringRef) override {
-            return llvm::make_unique<PrintFunctionsConsumer>(CI, ParsedTemplates);
-        }
-        
-        bool ParseArgs(const CompilerInstance &CI,
-                       const std::vector<std::string> &args) override {
-            for (unsigned i = 0, e = args.size(); i != e; ++i) {
-                llvm::errs() << "PrintFunctionNames arg = " << args[i] << "\n";
-                
-                // Example error handling.
-                DiagnosticsEngine &D = CI.getDiagnostics();
-                if (args[i] == "-an-error") {
-                    unsigned DiagID = D.getCustomDiagID(DiagnosticsEngine::Error,
-                                                        "invalid argument '%0'");
-                    D.Report(DiagID) << args[i];
-                    return false;
-                } else if (args[i] == "-parse-template") {
-                    if (i + 1 >= e) {
-                        D.Report(D.getCustomDiagID(DiagnosticsEngine::Error,
-                                                   "missing -parse-template argument"));
-                        return false;
-                    }
-                    ++i;
-                    ParsedTemplates.insert(args[i]);
-                }
-            }
-            if (!args.empty() && args[0] == "help")
-                PrintHelp(llvm::errs());
-            
-            return true;
-        }
-        
-        void PrintHelp(llvm::raw_ostream& ros) {
-            ros << "Help for PrintFunctionNames plugin goes here\n";
-        }
-        
-    };
-    
 }
 
 
 static FrontendPluginRegistry::Add<JJPlugin::JJASTAction>
 X("JJPlugin", "The JJPlugin is my first clang-plugin.");
 
-static FrontendPluginRegistry::Add<demonstrates::PrintFunctionNamesAction>
-Y("demonstrates","add demonstrates");
+static clang::FrontendPluginRegistry::Add<CodingStyle::CodingStyleASTAction>
+Y("ClangCodingStylePlugin", "ClangCodingStylePlugin");
