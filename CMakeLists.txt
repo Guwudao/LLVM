@@ -3,7 +3,7 @@
 if( NOT MSVC ) # MSVC mangles symbols differently
     if( NOT LLVM_REQUIRES_RTTI )
         if( NOT LLVM_REQUIRES_EH )
-            set(LLVM_EXPORTED_SYMBOL_FILE ${CMAKE_CURRENT_SOURCE_DIR}/MyPlugins.exports)
+            set(LLVM_EXPORTED_SYMBOL_FILE ${CMAKE_CURRENT_SOURCE_DIR}/JJPlugins.exports)
         endif()
     endif()
 endif()
