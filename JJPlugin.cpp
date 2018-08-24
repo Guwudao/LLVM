@@ -12,6 +12,9 @@
 #include "clang/Sema/Sema.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 
+#include "clang/Basic/Diagnostic.h"
+
+
 using namespace clang;
 using namespace std;
 using namespace llvm;
@@ -68,9 +71,9 @@ namespace JJPlugin {
             
             
             if (propertyDecl->getTypeSourceInfo()) {
-                if(!(attrKind & ObjCPropertyDecl::OBJC_PR_nonatomic)){
-                    diagWaringReport(location, "Are you sure to use atomic which might reduce the performance.", NULL);
-                }
+//                if(!(attrKind & ObjCPropertyDecl::OBJC_PR_nonatomic)){
+//                    diagWaringReport(location, "Are you sure to use atomic which might reduce the performance.", NULL);
+//                }
                 
                 if ((typeStr.find("NSString")!=string::npos)&& !(attrKind & ObjCPropertyDecl::OBJC_PR_copy)) {
                     diagWaringReport(location, "NSString 应该使用 copy 代替 strong.", NULL);
@@ -139,7 +142,7 @@ namespace JJPlugin {
                 
                 cout << "objcPropertyDecl -- objcPropertyDecl" << endl;
                 // 存储 Objective-C 类属性
-//                checkPropertyDecl(propertyDecl);
+                checkPropertyDecl(propertyDecl);
                 
             } else if (const ObjCInterfaceDecl *interfaceDecl = Result.Nodes.getNodeAs<ObjCInterfaceDecl>("ObjCInterfaceDecl")) {
                 
@@ -164,11 +167,6 @@ namespace JJPlugin {
                 diagWaringReport(location, "Body will never be executed when condition false.", NULL);
             }
             
-//                if (const ObjCMethodDecl *Mdecl = Result.Nodes.getNodeAs<ObjCMethodDecl>("ObjCMethodDecl")) {
-////                    JJVisitObjCMethodDecl(Mdecl);
-//                }
-            
-           
         }
     };
         
@@ -209,101 +207,6 @@ namespace JJPlugin {
         }
     };
 }
-
-
-
-/**
-namespace JJPlugin
-{
-    
-    class JJClassVisitor : public RecursiveASTVisitor<JJClassVisitor>
-    {
-    private:
-        ASTContext *context;
-    public:
-        void setContext(ASTContext &context)
-        {
-            this->context = &context;
-        }
-        
-        bool VisitObjCInterfaceDecl(ObjCInterfaceDecl *declaration)
-        {
-            checkForLowercasedName(declaration);
-            checkForUnderscoreInName(declaration);
-            return true;
-        }
-        
-        void checkForUnderscoreInName(ObjCInterfaceDecl *declaration)
-        {
-            StringRef name = declaration->getName();
-            size_t underscorePos = name.find('_');
-            if (underscorePos != StringRef::npos) {
-                std::string tempName = name;
-                std::string::iterator end_pos = std::remove(tempName.begin(), tempName.end(), '_');
-                tempName.erase(end_pos, tempName.end());
-                StringRef replacement(tempName);
-                
-                SourceLocation nameStart = declaration->getLocation();
-                SourceLocation nameEnd = nameStart.getLocWithOffset(name.size());
-                
-                FixItHint fixItHint = FixItHint::CreateReplacement(SourceRange(nameStart, nameEnd), replacement);
-                
-                DiagnosticsEngine &diagEngine = context->getDiagnostics();
-                unsigned diagID = diagEngine.getCustomDiagID(DiagnosticsEngine::Error, "Class name with `_` forbidden");
-                SourceLocation location = declaration->getLocation().getLocWithOffset(underscorePos);
-                diagEngine.Report(location, diagID).AddFixItHint(fixItHint);
-            }
-        }
-        
-        void checkForLowercasedName(ObjCInterfaceDecl *declaration)
-        {
-            StringRef name = declaration->getName();
-            char c = name[0];
-            if (isLowercase(c)) {
-                std::string tempName = name;
-                tempName[0] = toUppercase(c);
-                StringRef replacement(tempName);
-                
-                SourceLocation nameStart = declaration->getLocation();
-                SourceLocation nameEnd = nameStart.getLocWithOffset(name.size());
-                
-                FixItHint fixItHint = FixItHint::CreateReplacement(SourceRange(nameStart, nameEnd), replacement);
-                
-                DiagnosticsEngine &diagEngine = context->getDiagnostics();
-                unsigned diagID = diagEngine.getCustomDiagID(DiagnosticsEngine::Warning, "Class name should not start with lowercase letter");
-                SourceLocation location = declaration->getLocation();
-                diagEngine.Report(location, diagID).AddFixItHint(fixItHint);
-            }
-        }
-    };
-    
-    class JJConsumer : public ASTConsumer
-    {
-    public:
-        void HandleTranslationUnit(ASTContext &context) {
-            visitor.setContext(context);
-            visitor.TraverseDecl(context.getTranslationUnitDecl());
-        }
-    private:
-        JJClassVisitor visitor;
-    };
-    
-    class JJASTAction : public PluginASTAction
-    {
-    public:
-//        unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &ci, llvm::StringRef InFile){
-//            return unique_ptr<JJConsumer> (new JJConsumer(ci));
-//        }
-        
-        unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &ci, StringRef iFile);
-        
-        bool ParseArgs(const CompilerInstance &CI, const
-                       std::vector<std::string>& args) {
-            return true;
-        }
-    };
-}
-*/
 
 static FrontendPluginRegistry::Add<JJPlugin::JJASTAction>
 X("JJPlugin", "The JJPlugin is my first clang-plugin.");
