@@ -14,7 +14,6 @@
 
 #include "clang/Basic/Diagnostic.h"
 
-
 using namespace clang;
 using namespace std;
 using namespace llvm;
@@ -27,7 +26,7 @@ namespace JJPlugin {
     class JJHandler : public MatchFinder::MatchCallback {
     private:
         CompilerInstance &ci;
-        ASTContext *context;
+//        ASTContext *context;
         
     public:
         JJHandler(CompilerInstance &ci) :ci(ci) {}
@@ -70,7 +69,7 @@ namespace JJPlugin {
                     
                     //Warning
                     DiagnosticsEngine &D = ci.getDiagnostics();
-                    int diagID = D.getCustomDiagID(DiagnosticsEngine::Warning, "方法检测 ---- 方法名建议用小写字母开头");
+                    int diagID = D.getCustomDiagID(DiagnosticsEngine::Warning, "方法名建议用小写字母开头");
                     SourceLocation location = decl->getLocation();
                     D.Report(location, diagID).AddFixItHint(fixItHint);
                 }
@@ -90,15 +89,15 @@ namespace JJPlugin {
                 //                }
                 
                 if ((typeStr.find("NSString")!=string::npos)&& !(attrKind & ObjCPropertyDecl::OBJC_PR_copy)) {
-                    diagWaringReport(location, "属性NSString检测 ---- NSString 应该使用 copy 代替 strong.", NULL);
+                    diagWaringReport(location, "NSString 应该使用 copy 代替 strong.", NULL);
                 } else if ((typeStr.find("NSArray")!=string::npos)&& !(attrKind & ObjCPropertyDecl::OBJC_PR_copy)) {
-                    diagWaringReport(location, "属性NSArray检测 ---- NSArray 应该使用 copy 代替 strong.", NULL);
+                    diagWaringReport(location, "NSArray 应该使用 copy 代替 strong.", NULL);
                 }
                 
                 if(!typeStr.compare("int")){
-                    diagWaringReport(location, "属性int检测 ---- 应该使用 NSInteger instead 代替 int.", NULL);
+                    diagWaringReport(location, "Use the built-in NSInteger instead of int.", NULL);
                 } else if ((typeStr.find("<")!=string::npos && typeStr.find(">")!=string::npos) && !(attrKind & ObjCPropertyDecl::OBJC_PR_weak)) {
-                    diagWaringReport(location, "属性Delegate检测 ---- 应该使用 weak 定义 Delegate.", NULL);
+                    diagWaringReport(location, "应该使用 weak 定义 Delegate.", NULL);
                 }
             }
         }
@@ -174,19 +173,16 @@ namespace JJPlugin {
                 
             } else if (const IfStmt *stmtIf = Result.Nodes.getNodeAs<IfStmt>("ifStmt_empty_then_body")) {
                 
-                cout << "ifStmt_empty_then_body -- ifStmt_empty_then_body" << endl;
                 SourceLocation location = stmtIf->getIfLoc();
                 diagWaringReport(location, "Don't use empty body in IfStmt", NULL);
                 
             } else if (const IfStmt *stmtIf = Result.Nodes.getNodeAs<IfStmt>("condition_always_true")) {
                 
-                cout << "condition_always_true -- condition_always_true" << endl;
                 SourceLocation location = stmtIf->getIfLoc();
                 diagWaringReport(location, "Body will certainly be executed when condition true", NULL);
                 
             } else if (const IfStmt *stmtIf = Result.Nodes.getNodeAs<IfStmt>("condition_always_false")) {
                 
-                cout << "condition_always_false -- condition_always_false" << endl;
                 SourceLocation location = stmtIf->getIfLoc();
                 diagWaringReport(location, "Body will never be executed when condition false.", NULL);
                 
@@ -206,9 +202,8 @@ namespace JJPlugin {
             matcher.addMatcher(objcMethodDecl().bind("ObjCMethodDecl"), &handler);
             matcher.addMatcher(objcPropertyDecl().bind("objcPropertyDecl"), &handler);
         matcher.addMatcher(binaryOperator(hasDescendant(opaqueValueExpr(hasSourceExpression(objcMessageExpr(hasSelector("modelOfClass:"))))),isExpansionInMainFile()).bind("binaryOperator_modelOfClass"), &handler);
-            
-            
-//        matcher.addMatcher(ifStmt(isExpansionInMainFile(),hasThen(compoundStmt(statementCountIs(0)))).bind("ifStmt_empty_then_body"), &handler);
+        matcher.addMatcher(ifStmt().bind("ifStmt_empty_then_body"), &handler);
+        
 //            matcher.addMatcher(ifStmt(isExpansionInMainFile(),hasCondition(integerLiteral(equals(1)))).bind("condition_always_true"), &handler);
 //            matcher.addMatcher(ifStmt(isExpansionInMainFile(),hasCondition(floatLiteral(equals(0.0)))).bind("condition_always_false"), &handler);
 //            matcher.addMatcher(ifStmt(isExpansionInMainFile(),hasCondition(integerLiteral(equals(0)))).bind("condition_always_false"), &handler);
@@ -217,7 +212,6 @@ namespace JJPlugin {
         //遍历完一次语法树就会调用一次下面方法
         void HandleTranslationUnit(ASTContext &context) {
             matcher.matchAST(context);
-            
         }
     };
     
@@ -232,12 +226,10 @@ namespace JJPlugin {
         }
     };
 }
- 
+
 
 
 static FrontendPluginRegistry::Add<JJPlugin::JJASTAction>
 X("JJPlugin", "The JJPlugin is my first clang-plugin.");
 
-//static clang::FrontendPluginRegistry::Add<JJPlugin::JJASTAction>
-//X("JJPlugin", "Code Checker");
 
