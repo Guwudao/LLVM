@@ -31,8 +31,11 @@
 + 新建文件夹llvm，下载LLVM（预计大小 648.2 M）
 `$ git clone https://git.llvm.org/git/llvm.git/`
 + 下载clang（预计大小 240.6 M）
-`$ cd llvm/tools`
-`$ git clone https://git.llvm.org/git/clang.git/`
+
+```
+$ cd llvm/tools
+$ git clone https://git.llvm.org/git/clang.git/
+```
 + 注意 ：
 clang的下载目录应在llvm/tools下（如图）
 ![clang下载目录.png](https://upload-images.jianshu.io/upload_images/3350266-e7e42a014a284518.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
