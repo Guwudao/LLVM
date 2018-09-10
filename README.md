@@ -1,4 +1,3 @@
-# LLVM
 
  ## 开发的插件效果如下
 ![效果图.png](https://upload-images.jianshu.io/upload_images/3350266-ced03a5f6e5818e7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
@@ -66,9 +65,7 @@ $ cmake -G Ninja ../llvm -DCMAKE_INSTALL_PREFIX=‘安装路径’（本机为/U
 ```
 + 依次执行编译、安装指令
 
-```
-$ ninja
-```
+`$ ninja`
   ###### 编译完毕后， 【llvm_build】目录大概 21.05 G(仅供参考)
 
   `$ ninja install`
@@ -155,6 +152,7 @@ sudo mv HackedBuildSystem.xcspec \`xcode-select -print- path`/Platforms/iPhoneSi
 
 
 <br>
+
 # 总结
 
 Clang 的开源给了我们更多的操作空间，我们可以利用clang的API针对语法树(AST)进行相应的分析和处理，进一步完善我们的需求，也能更好地提升我们代码的规范和质量。
@@ -162,3 +160,9 @@ Clang 的开源给了我们更多的操作空间，我们可以利用clang的API
 https://clang.llvm.org/doxygen/namespaceclang.html
 https://clang.llvm.org/doxygen/classclang_1_1Decl.html
 https://clang.llvm.org/doxygen/classclang_1_1Stmt.html
+
+<br>
+<br>
+
+
+[简书地址](https://www.jianshu.com/p/4935e919bb45)
