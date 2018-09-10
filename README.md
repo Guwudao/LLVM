@@ -6,7 +6,7 @@
 
 
 # 简介
----
+
 #### 本开发是基于LLVM，那么我们先来简单了解一下LLVM：
 + LLVM项目是模块化、可重用的编译器以及工具链技术的集合
 + 美国计算机协会 (ACM) 将其2012 年软件系统奖项颁给了LLVM，之前曾经获得此奖项的软件和技术包括:Java、Apache、 Mosaic、the World Wide Web、Smalltalk、UNIX、Eclipse等等。
@@ -26,7 +26,7 @@
 <br>
 
 # 实战分析
----
+
 ### 基本文件
 + 新建文件夹llvm，下载LLVM（预计大小 648.2 M）
 `$ git clone https://git.llvm.org/git/llvm.git/`
@@ -73,7 +73,7 @@ clang的下载目录应在llvm/tools下（如图）
 
 <br>
 # 编写插件
----
+
 #### 1.目录
 + 在【clang/tools】源码目录下新建一个插件目录，假设叫做【JJPlugin】(如下图"JJPlugin目录"红色箭头所示)
 + 在【clang/tools/CMakeLists.txt】(如下图"JJPlugin目录"绿色箭头所示) 最后添加内容: `add_clang_subdirectory(JJPlugin)`，小括号里是插件目录名
@@ -128,7 +128,7 @@ path`/../PlugIns/Xcode3Core.ideplugin/Contents/SharedSupport/Developer/Library/X
 
 <br>
 # 总结
----
+
 Clang 的开源给了我们更多的操作空间，我们可以利用clang的API针对语法树(AST)进行相应的分析和处理，进一步完善我们的需求，也能更好地提升我们代码的规范和质量。
 附上关于语法树AST的资料：
 https://clang.llvm.org/doxygen/namespaceclang.html
