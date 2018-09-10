@@ -29,7 +29,10 @@
 
 ### 基本文件
 + 新建文件夹llvm，下载LLVM（预计大小 648.2 M）
-`$ git clone https://git.llvm.org/git/llvm.git/`
+
+```
+$ git clone https://git.llvm.org/git/llvm.git/
+```
 + 下载clang（预计大小 240.6 M）
 
 ```
@@ -44,8 +47,11 @@ clang的下载目录应在llvm/tools下（如图）
 ### 编译工具
 
 + 这里推荐使用ninja和cmake（先安装brew，https://brew.sh/）
+
+```
 `$ brew install cmake`
 `$ brew install ninja`
+```
 + ninja如果安装失败，可以直接从github获取release版放入【/usr/local/bin】目录中
 [ninja的GitHub传送门]( https://github.com/ninja-build/ninja/releases)
 
@@ -53,11 +59,16 @@ clang的下载目录应在llvm/tools下（如图）
 ##### 1、ninja编译
 + 在LLVM源码同级目录下新建一个【llvm_build】目录(最终会在【llvm_build】目录下生成【build.ninja】)
 + 同时在LLVM源码同级目录下新建一个【llvm_release】目录(最终编译文件会在llvm_release文件夹路径下)
-`$ cd llvm_build`
-`$ cmake -G Ninja ../llvm -DCMAKE_INSTALL_PREFIX=‘安装路径’（本机为/Users/xxx/Desktop/LLVM/llvm_release）`
 
+```
+$ cd llvm_build
+$ cmake -G Ninja ../llvm -DCMAKE_INSTALL_PREFIX=‘安装路径’（本机为/Users/xxx/Desktop/LLVM/llvm_release）
+```
 + 依次执行编译、安装指令
-`$ ninja` 
+
+```
+$ ninja
+```
   ###### 编译完毕后， 【llvm_build】目录大概 21.05 G(仅供参考)
 
   `$ ninja install`
@@ -70,8 +81,11 @@ clang的下载目录应在llvm/tools下（如图）
 ##### 2、Xcode编译
 + 作为iOS开发者，使用Xcode则是更加得心应手，但是Xcode编译的速度较慢，亲测在一个小时以上
 + 在llvm同级目录下新建一个【llvm_xcode】目录，然后开始编译
-`$ cd llvm_xcode`
-`$ cmake -G Xcode ../llvm`
+
+```
+$ cd llvm_xcode
+$ cmake -G Xcode ../llvm
+```
 + 完成后我们将看到熟悉的打开方式![xcode编译.png](https://upload-images.jianshu.io/upload_images/3350266-458f749ccaa76512.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 + 打开project后我们选择Auto的方式来创建scheme![AutoScheme.png](https://upload-images.jianshu.io/upload_images/3350266-48ca5716ceff7961.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 + 然后选择ALL_BUILD进行编译，此处应有1+小时的休息时间，然后就可以开始插件的编写![ALL_BUILD.png](https://upload-images.jianshu.io/upload_images/3350266-ceedb81497a84a79.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
@@ -90,7 +104,10 @@ clang的下载目录应在llvm/tools下（如图）
 ![JJPlugin目录.png](https://upload-images.jianshu.io/upload_images/3350266-d8baa1050085a612.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 + 目录文件创建完成后，需要利用cmake重新生成一下Xcode项目
-`$ cmake -G Xcode ../llvm`
+
+```
+$ cmake -G Xcode ../llvm
+```
 + 插件源代码在【Sources/Loadable modules】目录下可以找到，这样就可以直接在Xcode里编写插件代码
 ![source file.png](https://upload-images.jianshu.io/upload_images/3350266-fe863c513579d96b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
@@ -108,7 +125,10 @@ clang的下载目录应在llvm/tools下（如图）
 
 ### 4.加载
 + 在Xcode项目中指定加载插件动态库:BuildSettings > OTHER_CFLAGS
-`-Xclang -load -Xclang 动态库路径 -Xclang -add-plugin -Xclang 插件名称`
+
+```
+-Xclang -load -Xclang 动态库路径 -Xclang -add-plugin -Xclang 插件名称
+```
 ![加载插件.png](https://upload-images.jianshu.io/upload_images/3350266-00324371cd12dd84.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 ### 5.Hack Xcode
@@ -119,11 +139,14 @@ clang的下载目录应在llvm/tools下（如图）
 + 把这个路径修改为上面自己编译好的clang的路径
 ![ExecPath.png](https://upload-images.jianshu.io/upload_images/3350266-abb6e9d8796b687a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 + 然后在XcodeHacking目录下进行命令行，将XcodeHacking的内容剪切到Xcode内部
->$ sudo mv HackedClang.xcplugin \`xcode-select -print-
+
+```
+sudo mv HackedClang.xcplugin \`xcode-select -print-
 path`/../PlugIns/Xcode3Core.ideplugin/Contents/SharedSupport/Developer/Library/Xcode/Plug-ins
-
->$ sudo mv HackedBuildSystem.xcspec \`xcode-select -print- path`/Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Specifications`
-
+```
+```
+sudo mv HackedBuildSystem.xcspec \`xcode-select -print- path`/Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Specifications`
+```
 ### 6.使用
 + 重启Xcode，修改Xcode的编译器，转而使用我们自己的编译器
 ![clang LLVM.png](https://upload-images.jianshu.io/upload_images/3350266-7f15688d6e926455.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
